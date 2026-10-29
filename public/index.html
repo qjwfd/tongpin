@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#faf7f2">
+<title>同频 · 双人联机词游戏</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' shape-rendering='crispEdges'%3E%3Crect width='32' height='32' fill='%23faf7f2'/%3E%3Cpath fill='none' stroke='%23222' stroke-width='1.5' d='M8 22v-6h2v-2h2v-2h2V8h2v4h2v2h2v2h2v6H8z'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#faf7f2;
+    --paper:#fffdf8;
+    --ink:#1f1b16;
+    --ink2:#4a443b;
+    --muted:#8c8478;
+    --line:#e4ddd2;
+    --line2:#d6cdbe;
+    --accent:#2d2a26;
+    --accent-soft:#f0ebe2;
+    --good:#3f7d4f;
+    --warn:#c08a3e;
+    --radius:14px;
+    --serif:"Songti SC","Noto Serif SC","Source Han Serif SC",Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;min-height:100dvh;overflow-x:hidden;
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(0,0,0,.025) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 88% 22%, rgba(0,0,0,.02) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 30% 70%, rgba(0,0,0,.018) 0 1px, transparent 1.5px);
+    background-size: 40px 40px, 55px 55px, 35px 35px;
+  }
+  .wrap{position:relative;z-index:1;width:min(100%,560px);margin:0 auto;padding:24px 18px calc(40px + env(safe-area-inset-bottom));min-height:100dvh;display:flex;flex-direction:column;}
+  .screen{animation:fadeUp .4s ease both;}
+  .hidden{display:none !important;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+  .brand{display:flex;align-items:center;gap:9px;margin-bottom:26px;font-size:13px;color:var(--ink2);letter-spacing:.14em;}
+  .brand .tag{margin-left:auto;font-size:10px;letter-spacing:.1em;color:var(--muted);border:1px solid var(--line2);padding:4px 8px;border-radius:999px;background:var(--paper);}
+
+  h1.hero{font-size:clamp(32px,9vw,42px);line-height:1.25;margin:0 0 14px;font-weight:800;letter-spacing:-.01em;color:var(--ink);}
+  h1.hero .hl{background:linear-gradient(180deg,transparent 60%,#ffe08a 60%);padding:0 2px;}
+  .lede{color:var(--ink2);font-size:14.5px;line-height:1.85;margin:0 0 22px;max-width:30em;}
+  .lede b{color:var(--ink);font-weight:600;}
+
+  .steps{display:flex;gap:8px;margin:0 0 22px;}
+  .step{flex:1;padding:11px 10px;border:1.5px solid var(--line2);border-radius:12px;background:var(--paper);}
+  .step .n{font-size:10.5px;color:var(--ink);letter-spacing:.12em;display:block;margin-bottom:5px;font-weight:700;}
+  .step .t{font-size:12px;color:var(--ink2);line-height:1.5;}
+
+  .card{background:var(--paper);border:1.5px solid var(--line2);border-radius:var(--radius);padding:18px;box-shadow:3px 3px 0 var(--line);}
+  .field{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+  .field label{font-size:12px;color:var(--ink2);letter-spacing:.06em;font-weight:600;}
+  input.text{width:100%;padding:13px 15px;border-radius:11px;border:1.5px solid var(--line2);background:var(--bg);color:var(--ink);font-size:16px;outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit;}
+  input.text::placeholder{color:#b8b0a3;}
+  input.text:focus{border-color:var(--ink);box-shadow:2px 2px 0 var(--line2);}
+  .codeInput{text-transform:uppercase;letter-spacing:.3em;font-weight:700;font-size:17px;text-align:center;}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 18px;border-radius:11px;border:1.5px solid var(--ink);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:transform .1s ease,background .15s ease,box-shadow .15s ease;color:var(--ink);background:var(--paper);box-shadow:2px 2px 0 var(--ink);}
+  .btn:active{transform:translate(2px,2px);box-shadow:none;}
+  .btn.primary{background:var(--ink);color:var(--paper);}
+  .btn.primary:hover{background:#3a3530;}
+  .btn.ghost{background:var(--paper);}
+  .btn.ghost:hover{background:var(--accent-soft);}
+  .btn[disabled]{opacity:.4;cursor:default;transform:none;box-shadow:2px 2px 0 var(--line2);border-color:var(--line2);color:var(--muted);}
+  .btn .sub{font-weight:400;font-size:12px;opacity:.85;}
+
+  .or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:11.5px;letter-spacing:.1em;margin:16px 0;}
+  .or::before,.or::after{content:"";height:1.5px;flex:1;background:var(--line2);}
+  .joinRow{display:flex;gap:10px;}
+  .joinRow .text{flex:1;min-width:0;}
+  .joinRow .btn{width:auto;flex:0 0 auto;padding-inline:20px;}
+
+  .footNote{margin-top:auto;padding-top:28px;font-size:11.5px;color:var(--muted);line-height:1.7;text-align:center;}
+
+  /* lobby */
+  .lobbyCard{text-align:center;padding:28px 20px 22px;}
+  .lobbyLabel{font-size:11.5px;letter-spacing:.2em;color:var(--muted);margin-bottom:10px;font-weight:600;}
+  .roomCode{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:clamp(38px,12vw,52px);font-weight:800;letter-spacing:.16em;color:var(--ink);line-height:1.1;margin-bottom:20px;padding-left:.16em;}
+  .lobbyCard .row2{display:flex;gap:10px;}
+  .waiting{display:flex;align-items:center;justify-content:center;gap:9px;margin:20px 0 8px;font-size:13.5px;color:var(--ink2);}
+  .lobbyHint{font-size:12px;color:var(--muted);margin:0 0 16px;line-height:1.6;}
+  .linkBtn{background:none;border:none;color:var(--muted);font-size:12.5px;font-family:inherit;cursor:pointer;padding:6px 2px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line2);}
+  .linkBtn:hover{color:var(--ink);}
+
+  .pulse{width:8px;height:8px;border-radius:50%;background:var(--ink);flex:0 0 auto;animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,0,0,.3);}70%{box-shadow:0 0 0 9px rgba(0,0,0,0);}100%{box-shadow:0 0 0 0 rgba(0,0,0,0);}}
+
+  /* game head */
+  .gameHead{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:12px;color:var(--ink2);flex-wrap:wrap;}
+  .pill{padding:5px 11px;border-radius:999px;background:var(--paper);border:1.5px solid var(--line2);color:var(--ink);letter-spacing:.03em;font-weight:700;font-size:11.5px;}
+  .roomTag{margin-left:auto;font-family:ui-monospace,Menlo,monospace;letter-spacing:.12em;}
+  .histBtn{margin-left:6px;padding:5px 11px;border-radius:999px;background:var(--paper);border:1.5px solid var(--line2);color:var(--ink2);font-size:11.5px;font-family:inherit;cursor:pointer;font-weight:600;}
+  .histBtn:hover{border-color:var(--ink);color:var(--ink);}
+  .players{display:flex;gap:8px;margin-bottom:16px;}
+  .playerChip{flex:1;display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:11px;border:1.5px solid var(--line2);background:var(--paper);font-size:12.5px;color:var(--ink2);min-width:0;}
+  .playerChip .dot{width:7px;height:7px;border-radius:50%;background:var(--ink);flex:0 0 auto;}
+  .playerChip .dot.off{background:#c4bab0;}
+  .playerChip .dot.done{background:var(--warn);}
+  .playerChip .pname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--ink);}
+  .playerChip .pstate{margin-left:auto;font-size:11px;color:var(--muted);flex:0 0 auto;}
+
+  /* previous round reference */
+  .ref{border-radius:13px;border:1.5px dashed var(--line2);background:var(--paper);padding:13px 15px;margin-bottom:16px;text-align:center;}
+  .refTop{font-size:10.5px;letter-spacing:.14em;color:var(--muted);margin-bottom:8px;font-weight:600;}
+  .refGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .refCell .who{display:block;font-size:10.5px;color:var(--muted);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .refCell .rw{font-family:var(--serif);font-size:clamp(20px,6vw,26px);color:var(--ink);font-weight:600;}
+
+  .prompt{font-size:13.5px;line-height:1.8;color:var(--ink2);margin:0 0 14px;}
+  .prompt b{color:var(--ink);font-weight:700;}
+
+  .answerForm{margin-top:2px;}
+  .wordInput{width:100%;background:transparent;border:none;border-bottom:2px solid var(--line2);padding:12px 4px 14px;font-size:clamp(23px,7vw,30px);text-align:center;font-family:var(--serif);color:var(--ink);outline:none;letter-spacing:.06em;transition:border-color .15s;border-radius:0;}
+  .wordInput::placeholder{color:#c4bab0;font-size:15px;letter-spacing:.02em;font-family:inherit;}
+  .wordInput:focus{border-color:var(--ink);}
+  .row2{display:flex;gap:10px;margin-top:16px;}
+  .row2 .btn{flex:1;}
+  .dice .ico{font-size:15px;line-height:1;}
+
+  .waitBox{text-align:center;border-radius:13px;border:1.5px solid var(--line2);background:var(--paper);padding:24px 18px 20px;margin-top:4px;}
+  .waitLabel{font-size:11px;letter-spacing:.16em;color:var(--muted);}
+  .waitWord{font-family:var(--serif);font-size:clamp(28px,9vw,36px);margin:10px 0 14px;color:var(--ink);word-break:break-all;font-weight:600;}
+  .waitHint{display:inline-flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink2);}
+
+  /* win */
+  .winCard{position:relative;overflow:hidden;text-align:center;border-radius:16px;border:1.5px solid var(--ink);background:var(--paper);padding:26px 20px 22px;margin-bottom:16px;box-shadow:3px 3px 0 var(--ink);}
+  .winBadge{display:inline-block;font-size:10.5px;letter-spacing:.16em;color:var(--ink);border:1.5px solid var(--ink);background:var(--accent-soft);padding:5px 12px;border-radius:999px;margin-bottom:14px;font-weight:700;}
+  .winCard h2{margin:0;font-size:clamp(24px,7.5vw,32px);letter-spacing:.12em;color:var(--ink);font-weight:800;}
+  .winWord{font-family:var(--serif);font-size:clamp(38px,12vw,54px);font-weight:700;margin:16px 0 8px;word-break:break-all;line-height:1.15;color:var(--ink);}
+  .winSub{color:var(--ink2);font-size:12.5px;margin:0;line-height:1.7;}
+
+  /* history panel */
+  .histPanel{position:fixed;inset:0;z-index:80;background:rgba(31,27,22,.35);display:flex;align-items:flex-end;justify-content:center;padding:0;}
+  .histPanel.hidden{display:none;}
+  .histSheet{background:var(--paper);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:18px 18px calc(24px + env(safe-area-inset-bottom));max-height:78vh;overflow-y:auto;border-top:1.5px solid var(--ink);animation:slideUp .3s ease both;}
+  @keyframes slideUp{from{transform:translateY(100%);}to{transform:none;}}
+  .histHead{display:flex;align-items:center;margin-bottom:14px;}
+  .histHead h3{margin:0;font-size:15px;font-weight:700;color:var(--ink);letter-spacing:.04em;}
+  .histClose{margin-left:auto;background:none;border:1.5px solid var(--line2);border-radius:999px;width:30px;height:30px;font-size:16px;cursor:pointer;color:var(--ink2);line-height:1;}
+  .histClose:hover{border-color:var(--ink);}
+  .hitem{display:flex;align-items:center;gap:9px;padding:11px 0;border-top:1.5px solid var(--line);font-size:13px;color:var(--ink2);}
+  .hitem:last-child{border-bottom:1.5px solid var(--line);}
+  .hitem .hr{flex:0 0 52px;font-size:10.5px;color:var(--muted);letter-spacing:.06em;font-weight:600;}
+  .hitem .hw{font-family:var(--serif);font-size:15px;color:var(--ink);font-weight:600;}
+  .hitem .hsep{color:var(--muted);font-size:11px;}
+  .hitem .same{font-size:10px;color:var(--good);margin-left:auto;letter-spacing:.08em;font-weight:700;border:1px solid var(--good);padding:2px 7px;border-radius:999px;}
+  .histEmpty{text-align:center;color:var(--muted);font-size:13px;padding:30px 0;}
+
+  /* toast / netbar / fx */
+  #toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translate(-50%,16px);background:var(--ink);border:1.5px solid var(--ink);padding:11px 18px;border-radius:999px;font-size:13px;color:var(--paper);opacity:0;pointer-events:none;transition:opacity .28s ease,transform .28s ease;z-index:90;max-width:82vw;text-align:center;}
+  #toast.show{opacity:1;transform:translate(-50%,0);}
+  .netbar{position:fixed;left:0;right:0;top:0;z-index:95;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;text-align:center;font-size:12px;color:var(--paper);background:rgba(31,27,22,.92);border-bottom:1.5px solid var(--ink);transform:translateY(-105%);visibility:hidden;transition:transform .3s ease,visibility .3s;}
+  .netbar.show{transform:none;visibility:visible;}
+  #fx{position:fixed;inset:0;z-index:50;pointer-events:none;}
+
+  @media (min-width:560px){.wrap{padding-top:36px;}}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001s !important;animation-iteration-count:1 !important;transition-duration:.001s !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="netbar" id="netbar">连接中断，正在重连…</div>
+
+<div class="wrap">
+  <section id="home" class="screen">
+    <div class="brand">同频<span class="tag">双人联机</span></div>
+
+    <h1 class="hero">各写一个词<br>慢慢<span class="hl">想到一起</span></h1>
+    <p class="lede">你和朋友各写一个词，看见彼此的词之后，再从这两个词里想一个新的。一轮一轮靠近，直到<b>两个人写出同一个词</b>。</p>
+
+    <div class="steps">
+      <div class="step"><span class="n">01</span><span class="t">各写一个词</span></div>
+      <div class="step"><span class="n">02</span><span class="t">看见对方的</span></div>
+      <div class="step"><span class="n">03</span><span class="t">再写，直到相同</span></div>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label for="nameInput">你的昵称</label>
+        <input id="nameInput" class="text" type="text" maxlength="12" autocomplete="nickname" placeholder="比如：小满">
+      </div>
+      <button class="btn primary" data-act="create">创建房间</button>
+
+      <div class="or">已有房间码</div>
+
+      <div class="joinRow">
+        <input id="codeInput" class="text codeInput" type="text" maxlength="4" inputmode="text" autocomplete="off" placeholder="4 位码">
+        <button class="btn ghost" data-act="join">加入</button>
+      </div>
+    </div>
+
+    <p class="footNote">把房间链接发给对方，两台设备就能一起玩。</p>
+  </section>
+
+  <section id="lobby" class="screen hidden">
+    <div class="brand">同频<span class="tag">双人联机</span></div>
+    <div class="card lobbyCard">
+      <div class="lobbyLabel">房间码</div>
+      <div class="roomCode" id="lobbyCode">----</div>
+      <div class="row2">
+        <button class="btn ghost" data-act="copyCode">复制房间码</button>
+        <button class="btn primary" data-act="copyLink">复制邀请链接</button>
+      </div>
+      <div class="waiting"><span class="pulse"></span><span>等待对方加入…</span></div>
+      <p class="lobbyHint">对方打开邀请链接，或在这台设备上输入房间码即可加入。</p>
+      <button class="linkBtn" data-act="leave">解散房间</button>
+    </div>
+  </section>
+
+  <section id="game" class="screen hidden">
+    <div id="gameBody"></div>
+  </section>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="histPanel" class="histPanel hidden">
+  <div class="histSheet">
+    <div class="histHead">
+      <h3>这一局的记录</h3>
+      <button class="histClose" data-act="closeHist">×</button>
+    </div>
+    <div id="histBody"></div>
+  </div>
+</div>
+<canvas id="fx"></canvas>
+
+<script>
+(function () {
+  'use strict';
+
+  var WORDS = ['苹果','月亮','夏天','咖啡','雨伞','火车','星星','书桌','海浪','风筝','影子','面包','路灯','橘子','冰箱','袜子','蜡烛','地铁','沙漠','铅笔','镜子','公园','啤酒','蝴蝶','钟表','邮局','岛屿','火锅','窗帘','汽水','石头','云朵','玫瑰','雪人','屋顶','气球','邮票','耳机','玻璃','森林','码头','密码','雨林','灯塔','沙滩','西瓜','棉花','微笑','黄昏','口袋','信封','钥匙','树林','山谷','长椅','冰棍','深夜','清晨','车站','旧书'];
+
+  var els = {
+    home: document.getElementById('home'),
+    lobby: document.getElementById('lobby'),
+    game: document.getElementById('game'),
+    gameBody: document.getElementById('gameBody'),
+    lobbyCode: document.getElementById('lobbyCode'),
+    toast: document.getElementById('toast'),
+    netbar: document.getElementById('netbar'),
+    fx: document.getElementById('fx'),
+    histPanel: document.getElementById('histPanel'),
+    histBody: document.getElementById('histBody')
+  };
+
+  var ws = null;
+  var pendingMsg = null;
+  var session = readSession();
+  var lastSignature = '';
+  var lastPhase = null;
+  var composing = false;
+  var toastTimer = null;
+  var reconnectTimer = null;
+  var replaced = false;
+  var pendingState = null;
+  var currentState = null;
+  var desktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function readSession() {
+    try { var raw = sessionStorage.getItem('tp:session'); return raw ? JSON.parse(raw) : null; }
+    catch (e) { return null; }
+  }
+  function saveSession(value) {
+    try { if (value) sessionStorage.setItem('tp:session', JSON.stringify(value)); else sessionStorage.removeItem('tp:session'); }
+    catch (e) {}
+  }
+  function setUrlRoom(code) {
+    var url = code ? (location.pathname + '?room=' + code) : location.pathname;
+    try { history.replaceState(null, '', url); } catch (e) {}
+  }
+  function show(name) {
+    ['home', 'lobby', 'game'].forEach(function (k) { els[k].classList.toggle('hidden', k !== name); });
+  }
+  function toast(text) {
+    els.toast.textContent = text;
+    els.toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { els.toast.classList.remove('show'); }, 2400);
+  }
+  function showNetbar(on) { els.netbar.classList.toggle('show', !!on); }
+
+  /* ---------- connection ---------- */
+  function connect() {
+    clearTimeout(reconnectTimer);
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(proto + '//' + location.host);
+    ws.onopen = function () {
+      showNetbar(false);
+      startKeepAlive();
+      if (session && session.code && session.token) {
+        sendNow({ type: 'resume', code: session.code, token: session.token });
+      }
+      if (pendingMsg) { var m = pendingMsg; pendingMsg = null; sendNow(m); }
+    };
+    ws.onmessage = function (e) {
+      var msg; try { msg = JSON.parse(e.data); } catch (x) { return; }
+      handle(msg);
+    };
+    ws.onclose = function (e) {
+      stopKeepAlive();
+      if (replaced) return;
+      if (e && e.code === 4000) {
+        replaced = true; showNetbar(false); resetLocal();
+        toast('这个对局已在另一个页面继续'); return;
+      }
+      showNetbar(true);
+      reconnectTimer = setTimeout(connect, 1500);
+    };
+    ws.onerror = function () {};
+  }
+
+  var keepAliveTimer = null;
+  function startKeepAlive() {
+    stopKeepAlive();
+    keepAliveTimer = setInterval(function () {
+      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'ping' }));
+    }, 20000);
+  }
+  function stopKeepAlive() {
+    if (keepAliveTimer) { clearInterval(keepAliveTimer); keepAliveTimer = null; }
+  }
+
+  function sendNow(msg) {
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+  }
+  function send(msg) {
+    if (ws && ws.readyState === WebSocket.OPEN) sendNow(msg);
+    else pendingMsg = msg;
+  }
+
+  function handle(msg) {
+    switch (msg.type) {
+      case 'joined':
+        session = { code: msg.code, token: msg.token };
+        saveSession(session); setUrlRoom(msg.code); lastSignature = '';
+        break;
+      case 'state':
+        renderState(msg.state); break;
+      case 'error':
+        toast(msg.message || '出了点问题'); break;
+      case 'resumeFailed':
+        resetLocal(); toast('这一局已经结束啦，重新开一局吧'); break;
+      case 'roomClosed':
+        resetLocal(); toast(msg.message || '房间已关闭'); break;
+    }
+  }
+
+  function resetLocal() {
+    session = null; saveSession(null); setUrlRoom(null);
+    lastSignature = ''; lastPhase = null; show('home');
+  }
+
+  /* ---------- rendering ---------- */
+  function renderState(s) {
+    if (!s) return;
+    currentState = s;
+    if (composing) { pendingState = s; return; }
+    pendingState = null;
+    if (s.phase === 'waiting') {
+      els.lobbyCode.textContent = s.code;
+      els.lobbyCode.dataset.code = s.code;
+      show('lobby'); lastPhase = 'waiting'; return;
+    }
+    renderGame(s);
+    show('game');
+    if (s.phase === 'over' && lastPhase !== 'over') fireConfetti();
+    lastPhase = s.phase;
+  }
+
+  function oppStatus(s, opp) {
+    if (!opp.connected) return '已掉线';
+    if (s.phase === 'input') return opp.submitted ? '已提交' : '思考中';
+    return opp.ready ? '已准备' : '回味中';
+  }
+
+  function teamHead(s) {
+    var opp = s.opponent || { name: '对方', connected: false, submitted: false, ready: false };
+    var oppDone = (s.phase === 'input' && opp.submitted) || (s.phase !== 'input' && opp.ready);
+    return '' +
+      '<div class="gameHead">' +
+        '<span class="pill">第 ' + s.round + ' 轮</span>' +
+        '<button class="histBtn" data-act="history">记录 ' + s.history.length + '</button>' +
+        '<span class="roomTag">房间 ' + esc(s.code) + '</span>' +
+        '<button class="linkBtn" data-act="leave">离开</button>' +
+      '</div>' +
+      '<div class="players">' +
+        '<div class="playerChip"><span class="dot"></span><span class="pname">你 · ' + esc(s.you.name) + '</span></div>' +
+        '<div class="playerChip">' +
+          '<span class="dot' + (opp.connected ? (oppDone ? ' done' : '') : ' off') + '"></span>' +
+          '<span class="pname">' + esc(opp.name) + '</span>' +
+          '<span class="pstate">' + oppStatus(s, opp) + '</span>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function inputSection(s) {
+    var opp = s.opponent || { name: '对方', connected: false, submitted: false };
+    var last = s.history.length ? s.history[s.history.length - 1] : null;
+    var html = '';
+
+    if (last) {
+      html += '' +
+        '<div class="ref">' +
+          '<div class="refTop">第 ' + last.round + ' 轮 · 你们的两个词</div>' +
+          '<div class="refGrid">' +
+            '<div class="refCell"><span class="who">你</span><span class="rw">' + esc(last.words[0]) + '</span></div>' +
+            '<div class="refCell"><span class="who">' + esc(opp.name) + '</span><span class="rw">' + esc(last.words[1]) + '</span></div>' +
+          '</div>' +
+        '</div>' +
+        '<p class="prompt">从这两个词出发，写下<b>你想到的那个新词</b>。对方看不见你写了什么。</p>';
+    } else {
+      html += '<p class="prompt">这一轮不用商量 —— <b>凭直觉写一个词</b>，对方看不见。</p>';
+    }
+
+    if (s.you.submitted) {
+      html += '' +
+        '<div class="waitBox">' +
+          '<div class="waitLabel">你写的是</div>' +
+          '<div class="waitWord">' + esc(s.you.word) + '</div>' +
+          '<div class="waitHint"><span class="pulse"></span>' +
+            (opp.connected ? '等 ' + esc(opp.name) + ' 也写一个词…' : esc(opp.name) + ' 掉线了，等待重连…') +
+          '</div>' +
+        '</div>';
+    } else {
+      html += '' +
+        '<form class="answerForm" data-form="submit" autocomplete="off">' +
+          '<input id="wordInput" class="wordInput" name="word" type="text" maxlength="12" placeholder="写一个词" autocomplete="off" autocapitalize="off" spellcheck="false">' +
+          '<div class="row2">' +
+            '<button class="btn ghost dice" type="button" data-act="dice"><span class="ico">✦</span>随机一个</button>' +
+            '<button class="btn primary" type="submit">确定</button>' +
+          '</div>' +
+        '</form>';
+    }
+    return html;
+  }
+
+  function historyItems(list) {
+    if (!list || !list.length) return '<div class="histEmpty">还没有记录哦</div>';
+    return list.map(function (h) {
+      return '<div class="hitem">' +
+        '<span class="hr">第 ' + h.round + ' 轮</span>' +
+        '<span class="hw">' + esc(h.words[0]) + '</span>' +
+        '<span class="hsep">·</span>' +
+        '<span class="hw">' + esc(h.words[1]) + '</span>' +
+        (h.same ? '<span class="same">同频</span>' : '') +
+      '</div>';
+    }).join('');
+  }
+
+  function overSection(s) {
+    var opp = s.opponent || { name: '对方', ready: false };
+    var last = s.history.length ? s.history[s.history.length - 1] : null;
+    var word = last ? last.words[0] : '';
+    return '' +
+      '<div class="winCard">' +
+        '<div class="winBadge">第 ' + (s.winnerRound || s.round) + ' 轮 · 同频</div>' +
+        '<h2>想到一起了</h2>' +
+        '<div class="winWord">' + esc(word) + '</div>' +
+        '<p class="winSub">你和 ' + esc(opp.name) + ' 写出了同一个词</p>' +
+      '</div>' +
+      '<button class="btn primary" data-act="rematch"' + (s.you.ready ? ' disabled' : '') + '>' +
+        (s.you.ready ? '等 ' + esc(opp.name) + ' 准备…' : '再来一局') +
+      '</button>';
+  }
+
+  function buildGame(s) {
+    var body = (s.phase === 'input') ? inputSection(s) : overSection(s);
+    return teamHead(s) + body;
+  }
+
+  function renderGame(s) {
+    var sig = JSON.stringify(s);
+    if (sig === lastSignature) return;
+    var active = document.activeElement;
+    var typing = !!(active && active.id === 'wordInput');
+    var typedValue = typing ? active.value : null;
+    var caret = typing ? active.selectionStart : 0;
+    lastSignature = sig;
+    els.gameBody.innerHTML = buildGame(s);
+    var input = document.getElementById('wordInput');
+    if (input && !s.you.submitted) {
+      if (typing && typedValue !== null) {
+        input.value = typedValue;
+        input.focus({ preventScroll: true });
+        try { input.setSelectionRange(caret, caret); } catch (e) {}
+      } else if (desktop && lastPhase !== 'input') {
+        input.focus({ preventScroll: true });
+      }
+    }
+  }
+
+  function openHistory() {
+    els.histBody.innerHTML = historyItems(currentState ? currentState.history : []);
+    els.histPanel.classList.remove('hidden');
+  }
+  function closeHistory() { els.histPanel.classList.add('hidden'); }
+
+  /* ---------- interactions ---------- */
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest('form[data-form="submit"]');
+    if (!form) return;
+    e.preventDefault();
+    if (composing) return;
+    var input = document.getElementById('wordInput');
+    if (!input || input.disabled) return;
+    var word = input.value.trim();
+    validateWord(word, function () { send({ type: 'submit', word: word }); });
+  });
+
+  document.addEventListener('compositionstart', function (e) {
+    if (e.target && e.target.id === 'wordInput') composing = true;
+  });
+  document.addEventListener('compositionend', function (e) {
+    if (e.target && e.target.id === 'wordInput') {
+      composing = false;
+      if (pendingState) renderState(pendingState);
+    }
+  });
+
+  function validateWord(word, ok) {
+    if (!word) return toast('先写一个词吧');
+    if (Array.from(word).length > 12) return toast('最多 12 个字哦');
+    ok();
+  }
+
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var act = el.dataset.act;
+    if (act === 'create') {
+      var name = (document.getElementById('nameInput').value || '').trim();
+      if (!name) return toast('先给自己起个昵称吧');
+      if (Array.from(name).length > 12) return toast('昵称最多 12 个字');
+      try { localStorage.setItem('tp:name', name); } catch (x) {}
+      send({ type: 'create', name: name }); return;
+    }
+    if (act === 'join') {
+      var code = (document.getElementById('codeInput').value || '').trim().toUpperCase();
+      var joiner = (document.getElementById('nameInput').value || '').trim();
+      if (!joiner) return toast('先给自己起个昵称吧');
+      if (code.length !== 4) return toast('请输入 4 位房间码');
+      try { localStorage.setItem('tp:name', joiner); } catch (x) {}
+      send({ type: 'join', code: code, name: joiner }); return;
+    }
+    if (act === 'copyCode') {
+      copyText(els.lobbyCode.dataset.code || '').then(function (ok) {
+        toast(ok ? '房间码已复制' : '复制失败，请手动记下房间码');
+      }); return;
+    }
+    if (act === 'copyLink') {
+      var c2 = els.lobbyCode.dataset.code || '';
+      var link = location.origin + location.pathname + '?room=' + c2;
+      copyText(link).then(function (ok) { toast(ok ? '邀请链接已复制，发给对方吧' : '复制失败，请手动分享房间码'); });
+      return;
+    }
+    if (act === 'dice') {
+      var box = document.getElementById('wordInput');
+      if (!box) return;
+      var pick = WORDS[Math.floor(Math.random() * WORDS.length)];
+      var guard = 0;
+      while (pick === box.value && guard < 8) { pick = WORDS[Math.floor(Math.random() * WORDS.length)]; guard += 1; }
+      box.value = pick;
+      box.focus({ preventScroll: true });
+      try { box.setSelectionRange(pick.length, pick.length); } catch (x) {}
+      return;
+    }
+    if (act === 'rematch') {
+      if (el.disabled) return;
+      send({ type: 'rematch' }); return;
+    }
+    if (act === 'leave') {
+      if (window.confirm('确定要离开这个房间吗？')) {
+        send({ type: 'leave' }); resetLocal();
+      }
+      return;
+    }
+    if (act === 'history') { openHistory(); return; }
+    if (act === 'closeHist') { closeHistory(); return; }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target && e.target.id === 'codeInput' && e.key === 'Enter') {
+      e.preventDefault();
+      var btn = document.querySelector('[data-act="join"]');
+      if (btn) btn.click();
+    }
+    if (e.key === 'Escape') closeHistory();
+  });
+
+  els.histPanel.addEventListener('click', function (e) {
+    if (e.target === els.histPanel) closeHistory();
+  });
+
+  function copyText(text) {
+    if (!text) return Promise.resolve(false);
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text).then(function () { return true; }).catch(function () { return legacyCopy(text); });
+    }
+    return Promise.resolve(legacyCopy(text));
+  }
+  function legacyCopy(text) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta); return ok;
+    } catch (e) { return false; }
+  }
+
+  /* ---------- confetti ---------- */
+  function fireConfetti() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var canvas = els.fx;
+    var ctx = canvas.getContext('2d');
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var w = window.innerWidth, h = window.innerHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    var colors = ['#1f1b16', '#c08a3e', '#3f7d4f', '#b85c5c', '#5b7ba8', '#e0c068'];
+    var parts = [];
+    for (var i = 0; i < 110; i++) {
+      parts.push({
+        x: w / 2 + (Math.random() - 0.5) * w * 0.55,
+        y: h * 0.34 + (Math.random() - 0.5) * h * 0.12,
+        vx: (Math.random() - 0.5) * 9,
+        vy: Math.random() * -8.5 - 2,
+        g: 0.22, size: Math.random() * 7 + 3,
+        rot: Math.random() * Math.PI * 2, vr: (Math.random() - 0.5) * 0.35,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        shape: Math.random() < 0.3 ? 'circle' : 'rect', life: 1
+      });
+    }
+    var start = performance.now();
+    function frame(now) {
+      var t = now - start;
+      ctx.clearRect(0, 0, w, h);
+      for (var j = 0; j < parts.length; j++) {
+        var p = parts[j];
+        p.vy += p.g; p.vx *= 0.995; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        if (t > 2100) p.life = Math.max(0, p.life - 0.035);
+        if (p.life <= 0 || p.y > h + 30) continue;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        if (p.shape === 'circle') { ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2); ctx.fill(); }
+        else { ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2); }
+        ctx.restore();
+      }
+      if (t < 3300) requestAnimationFrame(frame); else ctx.clearRect(0, 0, w, h);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- boot ---------- */
+  (function init() {
+    try {
+      var savedName = localStorage.getItem('tp:name');
+      if (savedName) document.getElementById('nameInput').value = savedName;
+    } catch (e) {}
+    var params = new URLSearchParams(location.search);
+    var roomParam = (params.get('room') || '').trim().toUpperCase();
+    if (session && session.code && roomParam === session.code) {
+      setUrlRoom(session.code);
+    } else {
+      if (session) { session = null; saveSession(null); }
+      if (roomParam) document.getElementById('codeInput').value = roomParam;
+    }
+    show('home');
+    connect();
+  })();
+})();
+</script>
+</body>
+</html>
